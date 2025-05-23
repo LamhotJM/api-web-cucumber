@@ -6,14 +6,13 @@ Feature: User Authentication
 
   Scenario Outline: Login attempt with <description> credentials
     When the user logs in with username <username> and password <password>
-    #And the user submits the login form
     Then <outcome>
 
     Examples:
-      | description | username    | password    | outcome                                            |
-      | valid       | "lamhot"    | "lamhot"    | the user should be redirected to the homepage      |
-      | invalid     | "wronguser" | "wrongpass" | an error message should be displayed               |
-      | empty       | ""          | ""          | an error message should be displayed               |
+      | description | username         | password     | outcome                                            |
+      | valid       | "lamhot_auto"    | "Querty@2023"| the user should be redirected to the homepage      |
+      | invalid     | "wronguser"      | "wrongpass"  | an error message should be displayed               |
+      | empty       | ""               | ""           | an error message should be displayed               |
 
   @logout
   Scenario: Logout after successful login

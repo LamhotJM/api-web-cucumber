@@ -61,7 +61,7 @@ public class LoginStepDefinitions {
         // Reuse the loginPage flow
         loginPage
                 .openLoginModal()
-                .login("lamhot", "lamhot");
+                .login("lamhot_auto", "Querty@2023");
         Assert.assertTrue(
                 "Setup failure: login did not succeed.",
                 loginPage.isUserLoggedIn()
@@ -81,7 +81,7 @@ public class LoginStepDefinitions {
      */
     @Then("the login button should be visible on the page")
     public void verifyLogoutSuccess() {
-        Assert.assertTrue(
+        Assert.assertFalse(
                 "Expected login button to be visible after logout.",
                 loginPage.isUserLoggedIn()
         );
