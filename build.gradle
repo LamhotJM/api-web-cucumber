@@ -1,0 +1,90 @@
+plugins {
+    id 'java-library'
+    id 'io.qameta.allure' version '2.11.2'
+    id 'com.github.ben-manes.versions' version '0.46.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //  Logging
+    testImplementation 'org.slf4j:slf4j-simple:2.0.9'
+
+    //  Cucumber (Gherkin-Based Testing)
+    testImplementation 'io.cucumber:cucumber-java:7.14.0'
+    testImplementation 'io.cucumber:cucumber-junit:7.14.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.14.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.junit.vintage:junit-vintage-engine:5.10.0'
+
+    //  Selenium WebDriver
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.19.1'
+    testImplementation 'org.seleniumhq.selenium:selenium-chrome-driver:4.19.1'
+
+    //  WebDriverManager (Fix WebDriver Error)
+    testImplementation 'io.github.bonigarcia:webdrivermanager:5.6.3'
+
+    //  Rest Assured (API Testing)
+    testImplementation 'io.rest-assured:rest-assured:5.4.0'
+
+    //  JSON Parser
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+
+    //  Assertions
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+
+    //  Cucumber Reporting
+    testImplementation 'net.masterthought:cucumber-reporting:5.7.4'
+
+    //  Allure Report
+    testImplementation 'io.qameta.allure:allure-cucumber7-jvm:2.24.0'
+    testImplementation 'io.qameta.allure:allure-junit5:2.24.0'
+}
+
+tasks.register('testApi', Test) {
+    useJUnit()
+    systemProperty 'cucumber.plugin', 'pretty, json:build/reports/cucumber/testapi/api.json, html:build/reports/cucumber/testapi/cucumber-api.html'
+    systemProperty 'cucumber.filter.tags', '@api'
+    testLogging {
+        events "started", "passed", "failed"
+    }
+    include '**/ApiTestRunner.class'
+}
+
+tasks.register('testWeb', Test) {
+    useJUnitPlatform()
+    systemProperty 'cucumber.plugin', 'json:build/reports/cucumber/testweb/cucumber-web.json, html:build/reports/cucumber/testweb/cucumber-web.html'
+    systemProperty 'cucumber.filter.tags', '@web'
+    testLogging {
+        events "started", "passed", "failed"
+    }
+    include '**/WebTestRunner.class'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    systemProperty 'cucumber.plugin', 'json:build/reports/cucumber/cucumber-test.json, html:build/reports/cucumber/cucumber-test.html'
+    testLogging {
+        events "started", "passed", "failed"
+    }
+    dependsOn testApi, testWeb
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+allure {
+    version = '2.24.0'
+    autoconfigure = true
+    aspectjweaver = true
+}
+
+dependencyLocking {
+    lockAllConfigurations()
+}
