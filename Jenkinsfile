@@ -1,5 +1,7 @@
 pipeline {
 
+  agent any
+
   environment {
     // Point Gradle to a project-local cache directory
     GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
