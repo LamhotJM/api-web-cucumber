@@ -19,3 +19,8 @@ Feature: User Authentication
     Given the user is logged in with valid credentials
     When the user clicks the logout button
     Then the login button should be visible on the page
+
+  Scenario: tes 283 4i4 xfhsdkfs dsfksdfk
+    Given the user is logged in with valid credentials
+    When the user clicks the logout button
+    Then the login button should be visible on the page
