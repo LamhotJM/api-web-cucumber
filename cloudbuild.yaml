@@ -1,0 +1,46 @@
+# cloudbuild.yaml
+timeout: "1200s" # 20 minutes max
+
+steps:
+  # Install Chrome & Chromedriver
+  - id: install-browser
+    name: ubuntu:latest
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        apt-get update && apt-get install -y wget gnupg unzip \
+          && wget -qO - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+          && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+               > /etc/apt/sources.list.d/google-chrome.list \
+          && apt-get update && apt-get install -y google-chrome-stable \
+          && LATEST=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+          && wget -O /tmp/chromedriver.zip \
+               https://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip \
+          && unzip /tmp/chromedriver.zip -d /usr/local/bin \
+          && chmod +x /usr/local/bin/chromedriver
+
+  # Run API tests
+  - id: run-api-tests
+    name: gradle:7.6-jdk17
+    entrypoint: [ "bash", "-lc" ]
+    args: ["./gradlew testApi --no-daemon"]
+
+  # Run Web UI tests
+  - id: run-web-tests
+    name: gradle:7.6-jdk17
+    entrypoint: [ "bash", "-lc" ]
+    args: ["./gradlew testWeb --no-daemon"]
+
+  # Run general tests
+  - id: run-general-tests
+    name: gradle:7.6-jdk17
+    entrypoint: [ "bash", "-lc" ]
+    args: ["./gradlew test --no-daemon"]
+
+artifacts:
+  objects:
+    # Upload everything under build/reports to your GCS bucket
+    location: gs://$PROJECT_ID-test-reports/
+    paths:
+      - "build/reports/**"
