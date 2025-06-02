@@ -3,7 +3,12 @@ name: Automation Tests on GCE
 # Trigger on push to main (you can add pull_request or workflow_dispatch if desired)
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy-and-run:
