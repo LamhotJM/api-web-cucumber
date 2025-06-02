@@ -20,22 +20,22 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/gce_key
           chmod 600 /tmp/gce_key
 
-      # 3. Copy the entire repository to the GCE VM (user "demo" on ${{ secrets.GCE_IP }})
+      # 3. Copy the entire repository to the GCE VM (user "lamhot_id" on ${{ secrets.GCE_IP }})
       - name: Copy code to GCE VM
         run: |
           rsync -avz --delete \
             -e "ssh -i /tmp/gce_key -o StrictHostKeyChecking=no" \
             . \
-            demo@${{ secrets.GCE_IP }}:/home/demo/Automation-Tests
+            lamhot_id@${{ secrets.GCE_IP }}:/home/lamhot_id/Automation-Tests
 
       # 4. SSH into the VM and install dependencies, then run the Gradle tests
       - name: Run tests on GCE VM
         run: |
-          ssh -i /tmp/gce_key -o StrictHostKeyChecking=no demo@${{ secrets.GCE_IP }} << 'EOF'
+          ssh -i /tmp/gce_key -o StrictHostKeyChecking=no lamhot_id@${{ secrets.GCE_IP }} << 'EOF'
             set -e
 
             # Navigate into the copied repo
-            cd /home/demo/Automation-Tests
+            cd /home/lamhot_id/Automation-Tests
 
             # Ensure Gradle wrapper is executable
             chmod +x gradlew
