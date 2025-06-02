@@ -1,80 +1,71 @@
-name: Automation Tests
+name: Automation Tests on GCE
 
+# Trigger on push to main (you can add pull_request or workflow_dispatch if desired)
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
-  test:
+  deploy-and-run:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the repo so we can copy its contents
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission for Gradle
-        run: chmod +x gradlew
-
-      - name: Install Google Chrome
+      # 2. Create an SSH key file from the secret
+      - name: Create SSH key
         run: |
-          sudo apt update
-          sudo apt install -y google-chrome-stable
-          google-chrome --version
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/gce_key
+          chmod 600 /tmp/gce_key
 
-      - name: Debug Chrome & ChromeDriver
+      # 3. Copy the entire repository to the GCE VM (user "lamhot_id" on ${{ secrets.GCE_IP }})
+      - name: Copy code to GCE VM
         run: |
-          which google-chrome
-          which chromedriver
-          google-chrome --version
-          chromedriver --version
+          rsync -avz --delete \
+            -e "ssh -i /tmp/gce_key -o StrictHostKeyChecking=no" \
+            . \
+            lamhot_id@${{ secrets.GCE_IP }}:/home/lamhot_id/Automation-Tests
 
-      - name: Run API tests
-        run: ./gradlew testApi
+      # 4. SSH into the VM and install dependencies, then run the Gradle tests
+      - name: Run tests on GCE VM
+        run: |
+          ssh -i /tmp/gce_key -o StrictHostKeyChecking=no lamhot_id@${{ secrets.GCE_IP }} << 'EOF'
+            set -e
 
-      - name: Run Web UI tests
-        run: ./gradlew testWeb
+            # Navigate into the copied repo
+            cd /home/lamhot_id/Automation-Tests
 
-      - name: Run General Tests
-        run: ./gradlew test
+            # Ensure Gradle wrapper is executable
+            chmod +x gradlew
 
-      - name: Upload Cucumber Report (Web)
-        uses: actions/upload-artifact@v4
-        with:
-          name: cucumber-report-web
-          path: build/reports/cucumber/testweb/cucumber-web.html
-          retention-days: 7
+            # 4.1 Install JDK 17, Chrome, ChromeDriver, and other prerequisites
+            sudo apt-get update -y
+            sudo apt-get install -y openjdk-17-jdk git unzip curl
 
-      - name: Upload Cucumber Report (API)
-        uses: actions/upload-artifact@v4
-        with:
-          name: cucumber-report-api
-          path: build/reports/cucumber/testapi/cucumber-api.html
-          retention-days: 7
+            # Install Google Chrome
+            curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+            echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+            sudo apt-get update -y
+            sudo apt-get install -y google-chrome-stable
 
-      - name: Upload Test Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: build/reports/tests
-          retention-days: 7
+            # Install matching ChromeDriver
+            CHROME_MAJOR=$(google-chrome --product-version | cut -d '.' -f1)
+            DRIVER_VERSION=$(curl -sS "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR")
+            wget -q "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" -O /tmp/chromedriver.zip
+            unzip /tmp/chromedriver.zip -d /tmp
+            sudo mv /tmp/chromedriver /usr/local/bin/chromedriver
+            sudo chmod +x /usr/local/bin/chromedriver
+
+            # 4.2 Run your Gradle tasks (API, Web UI, and general tests)
+            ./gradlew testApi
+            ./gradlew testWeb
+            ./gradlew test
+
+            exit 0
+          EOF
+
+      # 5. Remove the temporary SSH key
+      - name: Cleanup SSH key
+        run: rm -f /tmp/gce_key
