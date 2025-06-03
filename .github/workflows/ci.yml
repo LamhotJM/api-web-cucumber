@@ -1,6 +1,5 @@
 name: Automation Tests on GCE
 
-# Trigger on push to main (you can add pull_request or workflow_dispatch if desired)
 on:
   push:
     branches:
@@ -15,17 +14,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repo so we can copy its contents
+      # 1. Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Create an SSH key file from the secret
+      # 2. Create SSH key file from the secret
       - name: Create SSH key
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/gce_key
           chmod 600 /tmp/gce_key
 
-      # 3. Copy the entire repository to the GCE VM (user "lamhots" on ${{ secrets.GCE_IP }})
+      # 3. Copy the entire repository to the GCE VM
       - name: Copy code to GCE VM
         run: |
           rsync -avz --delete \
@@ -33,25 +32,30 @@ jobs:
             . \
             lamhots@${{ secrets.GCE_IP }}:/home/lamhots/Automation-Tests
 
-      # 4. SSH into the VM and install dependencies, then run the Gradle tests
+      # 4. SSH into VM, install Java, then run Gradle tests
       - name: Run tests on GCE VM
         run: |
           ssh -i /tmp/gce_key -o StrictHostKeyChecking=no lamhots@${{ secrets.GCE_IP }} << 'EOF'
             set -e
+            set -x
 
-            # Navigate into the copied repo
+            # 4.1 Install Java (required by Gradle)
+            sudo apt-get update
+            sudo apt-get install -y openjdk-17-jdk
+
+            # 4.2 Navigate into the copied repo
             cd /home/lamhots/Automation-Tests
 
-            # Ensure Gradle wrapper is executable
+            # 4.3 Ensure the Gradle wrapper is executable
             chmod +x gradlew
 
-            # Run your Gradle tasks (API, Web UI, and general tests)
-             ./gradlew testApi --info
+            # 4.4 Run your Gradle task(s)
+            ./gradlew testApi --info
 
-            # Force an exit 0 so that the SSH session itself succeeds
+            # 4.5 Force a zero exit if everything passed
             exit 0
           EOF
 
-      # 5. Remove the temporary SSH key
+      # 5. Clean up the temporary SSH key
       - name: Cleanup SSH key
         run: rm -f /tmp/gce_key
