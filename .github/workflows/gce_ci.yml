@@ -1,0 +1,57 @@
+name: Automation Tests on GCE
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Create SSH key file from the secret
+      - name: Create SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/gce_key
+          chmod 600 /tmp/gce_key
+
+      # 3. Copy the entire repository to the GCE VM
+      - name: Copy code to GCE VM
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i /tmp/gce_key -o StrictHostKeyChecking=no" \
+            . \
+            lamhots@${{ secrets.GCE_IP }}:/home/lamhots/Automation-Tests
+
+      # 4. SSH into VM, install Java, then run Gradle tests
+      - name: Run tests on GCE VM
+        run: |
+          ssh -i /tmp/gce_key -o StrictHostKeyChecking=no lamhots@${{ secrets.GCE_IP }} << 'EOF'
+            set -e
+            set -x
+
+            # 4.1 Install Java (required by Gradle)
+            sudo apt-get update
+            sudo apt-get install -y openjdk-17-jdk
+
+            # 4.2 Navigate into the copied repo
+            cd /home/lamhots/Automation-Tests
+
+            # 4.3 Ensure the Gradle wrapper is executable
+            chmod +x gradlew
+
+            # 4.4 Run your Gradle task(s)
+            ./gradlew testApi --info
+
+      # 5. Clean up the temporary SSH key
+      - name: Cleanup SSH key
+        run: rm -f /tmp/gce_key
