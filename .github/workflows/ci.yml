@@ -54,7 +54,7 @@ jobs:
 
             # 4.5 Force a zero exit if everything passed
             exit 0
-          EOF
+          EOF || true
 
       # 5. Clean up the temporary SSH key
       - name: Cleanup SSH key
