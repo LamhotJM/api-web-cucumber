@@ -50,11 +50,7 @@ jobs:
             chmod +x gradlew
 
             # 4.4 Run your Gradle task(s)
-            ./gradlew test --info
-
-            # 4.5 Force a zero exit if everything passed
-            exit 0
-          EOF || true
+            ./gradlew testApi --info
 
       # 5. Clean up the temporary SSH key
       - name: Cleanup SSH key
