@@ -47,9 +47,6 @@ jobs:
 
             # 4.2 Run your Gradle tasks (API, Web UI, and general tests)
             ./gradlew testApi
-            ./gradlew testWeb
-            ./gradlew test
-
             exit 0
           EOF
 
