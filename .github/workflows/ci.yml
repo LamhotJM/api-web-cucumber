@@ -46,7 +46,7 @@ jobs:
             chmod +x gradlew
 
             # Run your Gradle tasks (API, Web UI, and general tests)
-            ./gradlew testApi
+             ./gradlew testApi --info
 
             # Force an exit 0 so that the SSH session itself succeeds
             exit 0
