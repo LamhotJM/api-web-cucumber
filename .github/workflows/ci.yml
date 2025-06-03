@@ -45,24 +45,6 @@ jobs:
             # Ensure Gradle wrapper is executable
             chmod +x gradlew
 
-            # 4.1 Install JDK 17, Chrome, ChromeDriver, and other prerequisites
-            sudo apt-get update -y
-            sudo apt-get install -y openjdk-17-jdk git unzip curl
-
-            # Install Google Chrome
-            curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-            echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-            sudo apt-get update -y
-            sudo apt-get install -y google-chrome-stable
-
-            # Install matching ChromeDriver
-            CHROME_MAJOR=$(google-chrome --product-version | cut -d '.' -f1)
-            DRIVER_VERSION=$(curl -sS "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR")
-            wget -q "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" -O /tmp/chromedriver.zip
-            unzip /tmp/chromedriver.zip -d /tmp
-            sudo mv /tmp/chromedriver /usr/local/bin/chromedriver
-            sudo chmod +x /usr/local/bin/chromedriver
-
             # 4.2 Run your Gradle tasks (API, Web UI, and general tests)
             ./gradlew testApi
             ./gradlew testWeb
