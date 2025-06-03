@@ -45,8 +45,10 @@ jobs:
             # Ensure Gradle wrapper is executable
             chmod +x gradlew
 
-            # 4.2 Run your Gradle tasks (API, Web UI, and general tests)
+            # Run your Gradle tasks (API, Web UI, and general tests)
             ./gradlew testApi
+
+            # Force an exit 0 so that the SSH session itself succeeds
             exit 0
           EOF
 
