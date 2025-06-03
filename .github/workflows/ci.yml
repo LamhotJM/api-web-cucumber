@@ -51,7 +51,7 @@ jobs:
 
       - name: Run API tests
         run: ./gradlew testApi
-        
+
       - name: Upload Cucumber Report (Web)
         uses: actions/upload-artifact@v4
         with:
