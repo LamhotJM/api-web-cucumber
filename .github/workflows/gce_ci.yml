@@ -48,6 +48,7 @@ jobs:
 
             # 4.3 Ensure the Gradle wrapper is executable
             chmod +x gradlew
+
             # 4.4 Run your Gradle task(s)
             ./gradlew testApi --info
 
